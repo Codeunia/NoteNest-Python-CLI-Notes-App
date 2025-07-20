@@ -26,7 +26,7 @@ def view_notes():
         print("No notes found.")
         return
     for idx, note in enumerate(notes, 1):
-        print("\n📌 " + str(idx) + ". " + note["title"])
+        print(str(idx) + ". " + note["title"])
         print(note["content"])
 
 def delete_note(title):
