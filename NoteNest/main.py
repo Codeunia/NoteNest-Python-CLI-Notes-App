@@ -18,24 +18,25 @@ def add_note(title, content):
     notes = load_notes()
     notes.append({"title": title, "content": content})
     save_notes(notes)
-    print(f"✅ Note '{title}' added.")
+    print("Note '" + title + "' added. ✅")
 
 def view_notes():
     notes = load_notes()
     if not notes:
-        print("📭 No notes found.")
+        print("No notes found.")
         return
     for idx, note in enumerate(notes, 1):
-        print(f"\n📌 {idx}. {note['title']}\n{note['content']}")
+        print("\n📌 " + str(idx) + ". " + note["title"])
+        print(note["content"])
 
 def delete_note(title):
     notes = load_notes()
     new_notes = [n for n in notes if n['title'] != title]
     if len(notes) == len(new_notes):
-        print(f"⚠ No note found with title '{title}'")
+       print("No note found with title '" + title + "'")
     else:
         save_notes(new_notes)
-        print(f"🗑 Note '{title}' deleted.")
+       print("Note '" + title + "' deleted.")
 
 def main():
     parser = argparse.ArgumentParser(description="NoteNest – Simple CLI Notes App")
