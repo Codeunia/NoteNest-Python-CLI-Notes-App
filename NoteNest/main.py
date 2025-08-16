@@ -1,86 +1,106 @@
-from auth import check_password, save_hashed_password, logout
 import argparse
 import json
 import os
+from cryptography.fernet import InvalidToken
+from auth import save_hashed_password, login_user, logout, require_login
+from secure_store import generate_key, encrypt_data, decrypt_data
 
 STORAGE_FILE = "notes.json"
+
+generate_key()
 
 def load_notes():
     if not os.path.exists(STORAGE_FILE):
         return []
-    with open(STORAGE_FILE, "r") as f:
-        return json.load(f)
+    with open(STORAGE_FILE, "rb") as f:
+        encrypted_data = f.read()
+    if not encrypted_data:
+        return []
+    try:
+        decrypted_data = decrypt_data(encrypted_data)
+        return json.loads(decrypted_data.decode())
+    except InvalidToken:
+        print("❌ Cannot decrypt notes. Your encryption key might be missing or changed.")
+        return []
 
 def save_notes(notes):
-    with open(STORAGE_FILE, "w") as f:
-        json.dump(notes, f, indent=2)
+    data = json.dumps(notes, indent=2).encode()
+    encrypted_data = encrypt_data(data)
+    with open(STORAGE_FILE, "wb") as f:
+        f.write(encrypted_data)
 
+# Note actions
 def add_note(title, content):
     notes = load_notes()
     notes.append({"title": title, "content": content})
     save_notes(notes)
-    print(f"✅ Note '{title}' added.")
+    print(f"🌼✨ Yay! Your note '{title}' has bloomed in the garden! ✨🌼")
 
 def view_notes():
     notes = load_notes()
     if not notes:
-        print("📭 No notes found.")
+        print("📭🌱 No notes yet... let's grow your note garden!")
         return
+    print("\n🌸🌿 --- Your Note Garden --- 🌿🌸")
     for idx, note in enumerate(notes, 1):
-        print(f"\n📌 {idx}. {note['title']}\n{note['content']}")
+        print(f"\n🌺 {idx}. {note['title']}\n   📜 {note['content']}")
 
 def delete_note(title):
     notes = load_notes()
     new_notes = [n for n in notes if n['title'] != title]
     if len(notes) == len(new_notes):
-        print(f"⚠ No note found with title '{title}'")
+        print(f"⚠️🌼 Oops! No note found with the title '{title}'.")
     else:
         save_notes(new_notes)
-        print(f"🗑 Note '{title}' deleted.")
+        print(f"🗑🌸 The note '{title}' has been gently removed from the garden.")
+
+# CLI
 def main():
-    parser = argparse.ArgumentParser(description="NoteNest - CLI Notes App")
+    print("\n🌷🐦 Welcome to NoteNest - Your Cozy Note Garden! 🐦🌷")
+    parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(dest="command")
 
-    # Setup password
-    subparsers.add_parser("setup", help="Setup master password")
-    subparsers.add_parser("logout", help="Logout current session")
-
-
-    # Add note
-    add_parser = subparsers.add_parser("add", help="Add a new note")
-    add_parser.add_argument("title", help="Title of the note")
-    add_parser.add_argument("content", help="Content of the note")
-
-    # View notes
-    subparsers.add_parser("view", help="View all notes")
-
-    # Delete note
-    del_parser = subparsers.add_parser("delete", help="Delete a note")
-    del_parser.add_argument("title", help="Title of the note to delete")
+    subparsers.add_parser("Setup", help="🌱 Setup master password (one-time)")
+    subparsers.add_parser("Login", help="🔑 Login to NoteNest")
+    subparsers.add_parser("Logout", help="🚪 Logout from NoteNest")
+    add_parser = subparsers.add_parser("Add", help="🌼 Add a new note")
+    add_parser.add_argument('-t', '--title', help='Title of the note')
+    add_parser.add_argument('-c', '--content', help='Content of the note')
+    subparsers.add_parser("View", help="🌸 View all notes")
+    del_parser = subparsers.add_parser("Delete", help="🗑 Delete a note")
+    del_parser.add_argument("title", help="🌺 Title of the note to delete")
 
     args = parser.parse_args()
-    print(f"Command received: {args.command}")
 
-    if args.command == "setup":
+    if not args.command:
+        parser.print_help()
+        return
+
+    if args.command == "Setup":
         save_hashed_password()
-    
-    elif args.command == "logout":
-       logout()
 
+    elif args.command == "Login":
+        login_user()
 
-    elif args.command == "add":
-        if check_password():
-            add_note(args.title, args.content)
+    elif args.command == "Logout":
+        logout()
 
-    elif args.command == "view":
-        if check_password():
+    elif args.command == "Add":
+        if require_login():
+            title = args.title or input("Enter note title: ")
+            content = args.content or input("Enter note content: ")
+            add_note(title, content)
+
+    elif args.command == "View":
+        if require_login():
             view_notes()
 
-    elif args.command == "delete":
-        if check_password():
+    elif args.command == "Delete":
+        if require_login():
             delete_note(args.title)
 
     else:
         parser.print_help()
 
-main()
+if __name__ == "__main__":
+    main()
