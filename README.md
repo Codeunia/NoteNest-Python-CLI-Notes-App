@@ -72,6 +72,7 @@ python main.py View	              🌸 View all notes
 python main.py Delete "Title"   	🗑 Delete a note
 
 ## 📂 Project Structure
+```
 NoteNest/
 │── main.py          # CLI entry point (Add, View, Delete, Login, Logout, Setup)
 │── auth.py          # Handles authentication (setup, login, logout, session)
@@ -82,7 +83,7 @@ NoteNest/
 │── session.json     # Tracks login sessions (auto-created)
 │── secret.key       # Encryption key (auto-generated, required for decryption)
 
-
+```
 ## 👨‍💻 Contributor
 Hi! I’m Akanksha Kurial 🌻 – I enjoy blending tech + creativity.
 This project reflects my love for making tools that are not only functional but also fun to use.
